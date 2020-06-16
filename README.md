@@ -11,6 +11,6 @@ The code makes time-frequency map using Fourier Transform
 <li><b>overlap</b> - number of samples between beginnings of the window -> samples which will overlap are equal to the length of the window minus overlap; default to 0 (int)</li>
 <li><b>f_min, f_max</b> - approximate values of minimum and maximum frequencies which will be shown on time-frequency map; from 0 to around Fs/2; for more info see https://numpy.org/doc/stable/reference/generated/numpy.fft.rfftfreq.html; f_min default to 0; f_max default to around Fs/2 (int or float)</li>
 <li><b>t_min, t_max</b> - approximate values of minimum and maximum time which will be shown on time-frequency map; from 0 to signal length is sec = signal_lenght/Fs; t_min default to 0; t_max default to signal_leght/Fs (int or float)</li>
-<li><b>title</b> - title of the chart; default to 'Channel <channel_number>' (str)</li>
-<li><b>reference1, reference2</b> - channels which are treated as references; refernce2 defaults to None; reference channels are subtracted from all others channels: if one given -> -0.5reference1; if two given -> -0.5(reference1+reference2) (label of channel str or number of channel int)</li>
+<li><b>title</b> - title of the chart; default to 'Channel [channel_number]' (str)</li>
+<li><b>reference1, reference2</b> - channels which are treated as references; reference2 defaults to None; reference channels are subtracted from all others channels: if one given -> -0.5*reference1; if two given -> -0.5*(reference1+reference2) (label of channel str or number of channel int)</li>
   </ul>
