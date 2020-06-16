@@ -2,7 +2,7 @@
 
 The code makes time-frequency map using Fourier Transform
 
-<b>os.chdir<\b> - path to the data folder
+<b>os.chdir<b\> - path to the data folder
 filename - edf filename with EEG data
 Fs - sampling in Hz (int)
 window - a window with its length which is convolved with signal (for more info see https://numpy.org/doc/stable/reference/routines.window.html)
