@@ -20,8 +20,10 @@ def main():
     reference1 = 'T9'
     reference2 = 'T10'
    
-    Fourier(filename = filename, Fs = Fs, channel = channel, window = window, overlap = overlap,
-                f_min = f_min, f_max = f_max, t_min = t_min, t_max = t_max, reference1 = reference1, reference2 = reference2, title = title)
+    Fourier(filename = filename, Fs = Fs, channel = channel, window = window,
+            overlap = overlap, f_min = f_min, f_max = f_max, t_min = t_min, 
+            t_max = t_max, reference1 = reference1, reference2 = reference2, 
+            title = title)
         
 
 if __name__ == '__main__':
