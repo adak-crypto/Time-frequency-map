@@ -29,13 +29,14 @@ class Fourier(object):
         
         self.__montage()
         
-        if self.__t_min == None:
-            self.__t_min = self.__time[0]
-            
-        if self.__t_max == None:
-            self.__t_max = self.__t_max[-1]
             
         self.__spectrogram()
+        
+        if self.__t_min == None:
+            self.__t_min = self.__time_map[0]
+            
+        if self.__t_max == None:
+            self.__t_max = self.__time_map[-1]
         
         if self.__f_min == None:
             self.__f_min = self.__freq_map[0]
@@ -176,7 +177,13 @@ class Fourier(object):
         Nx = len(self.__x)
         No = len(self.__window)
         self.__window = self.__window/np.linalg.norm(self.__window)
-        window_pos = np.arange(0, Nx, self.__overlap)                        
+        
+        if self.__overlap != 0:
+            window_pos = np.arange(0, Nx, self.__overlap)
+
+        else:
+            window_pos = np.arange(0, Nx, No)
+                        
         self.__time_map = window_pos/self.__Fs
         N_windows = len(window_pos)                     #numbers of windows  
         self.__freq_map = np.fft.rfftfreq(No, 1/self.__Fs)
