@@ -2,35 +2,37 @@
 
 import pyedflib
 import numpy as np
+import scipy.signal as ss
 import matplotlib.pyplot as plt
 import re
+import matplotlib.gridspec as gridspec
+
 
 
 class Fourier(object):
-    def __init__(self, *, filename, Fs, channel, window, reference1, 
+    def __init__(self, *, filename, Fs, channels, window, reference1, 
                  reference2 = None, overlap = 0, f_min = None, f_max = None, t_min = None, 
-                 t_max = None, title = None): 
+                 t_max = None): 
         
         self.__filename = filename
         self.__Fs = Fs
         self.__reference1 = reference1
         self.__reference2 = reference2
-        self.__channel = channel
+        self.__channels = channels
         self.__window = window
         self.__overlap = overlap
         self.__f_min = f_min
         self.__f_max = f_max
         self.__t_min = t_min
         self.__t_max = t_max
-        self.__title = title
+        
         
         
         self.__read_from_edf()
         
         self.__montage()
         
-            
-        self.__spectrogram()
+        self.__time_freq()
         
         if self.__t_min == None:
             self.__t_min = self.__time_map[0]
@@ -43,9 +45,7 @@ class Fourier(object):
             
         if self.__f_max == None:
             self.__f_max = self.__freq_map[-1]
-            
-        if self.__title == None:
-            self.__title = 'Channel ' + str(self.__channel)
+        
             
         self.__TFRPlot()
      
@@ -69,8 +69,8 @@ class Fourier(object):
         return self.__reference2
 
     @property
-    def channel(self):
-        return self.__channel
+    def channels(self):
+        return self.__channels
 
     @property
     def window(self):
@@ -96,11 +96,7 @@ class Fourier(object):
     def t_max(self):
         return self.__t_max
 
-    @property
-    def title(self):
-        return self.__title    
     
-        
 
     def __read_from_edf(self): 
   
@@ -129,8 +125,9 @@ class Fourier(object):
 
 
     def __montage(self):
-
-
+        
+        b, a = ss.butter(2, 0.03, btype = 'highpass')
+   
         if self.__reference2 == None:
                 
             if isinstance(self.__reference1, int):
@@ -142,6 +139,7 @@ class Fourier(object):
 
             for i in range(np.shape(self.__signal)[0]):
                 self.__signal[i] -= s1
+                self.__signal[i] = ss.filtfilt(b, a, self.__signal[i])
   
         else:
                 
@@ -158,40 +156,50 @@ class Fourier(object):
 
             for i in range(np.shape(self.signal)[0]):
                 self.__signal[i] -= 0.5*(s1+s2)
+                self.__signal[i] = ss.filtfilt(b, a, self.__signal[i])
    
         
     @property
     def signal(self):
         return self.__signal
+    
+   
+    def __time_freq(self):
         
-
-    def __spectrogram(self):
-        
-        
-        if isinstance(self.__channel, int):
-            self.__x = self.__signal[self.__channel]
-                
-        if isinstance(self.__channel, str):
-            self.__x = self.__signal[self.__signal_labels.index(self.__channel)]
-
-        Nx = len(self.__x)
-        No = len(self.__window)
+        Nx = self.__signal.shape[1]
+        self.__No = len(self.__window)
         self.__window = self.__window/np.linalg.norm(self.__window)
         
         if self.__overlap != 0:
-            window_pos = np.arange(0, Nx, self.__overlap)
+            self.__window_pos = np.arange(0, Nx, self.__overlap)
 
         else:
-            window_pos = np.arange(0, Nx, No)
+            self.__window_pos = np.arange(0, Nx, self.__No)
                         
-        self.__time_map = window_pos/self.__Fs
-        N_windows = len(window_pos)                     #numbers of windows  
-        self.__freq_map = np.fft.rfftfreq(No, 1/self.__Fs)
-        self.__power = np.zeros((len(self.__freq_map),N_windows))
-        z = np.zeros(int(No/2))                        #half of window to add to the begining and to the end
-        sig = np.concatenate((z,self.__x,z))
-        for i,pos in enumerate(window_pos):
-            s = sig[pos:pos+No] #part of the signal with len of the window
+        self.__time_map = self.__window_pos/self.__Fs
+          
+        self.__freq_map = np.fft.rfftfreq(self.__No, 1/self.__Fs)
+        self.__z = np.zeros(int(self.__No/2))       #half of window to add to the begining and to the end 
+        
+        
+        
+
+    def __spectrogram(self, channel):
+        
+        
+        if isinstance(channel, int):
+            self.__x = self.__signal[channel]
+            self.__channel_name = self.__signal_labels[channel]
+                
+        if isinstance(channel, str):
+            self.__x = self.__signal[self.__signal_labels.index(channel)]
+            self.__channel_name = channel
+
+        N_windows = len(self.__window_pos)                     #numbers of windows
+        self.__power = np.zeros((len(self.__freq_map),N_windows))              
+        sig = np.concatenate((self.__z,self.__x,self.__z))
+        for i,pos in enumerate(self.__window_pos):
+            s = sig[pos:pos+self.__No] #part of the signal with len of the window
             s = s*self.__window    #convolution
             S = np.fft.rfft(s)  
             Power_tmp = S*S.conj()    #power spectrum = S*S conjuction
@@ -202,10 +210,13 @@ class Fourier(object):
                 Power_tmp[1:] *=2 
             self.__power[:,i] = Power_tmp
             
-        
+        return self.__x, self.__power, self.__channel_name
+            
 
     
     def __TFRPlot(self):
+        
+    
       
         df = self.__freq_map[1]-self.__freq_map[0]
         dt = self.__time_map[1]-self.__time_map[0]
@@ -220,14 +231,44 @@ class Fourier(object):
         t_min_i = np.where(self.__time_map == t_min_m)[0][0]
         t_max_i = np.where(self.__time_map == t_max_m)[0][0]
         
-        sygAxes = plt.axes([0.05, 0.05, 0.8, 0.1])
-        tfAxes = plt.axes([0.05, 0.15, 0.8, 0.8])
-        sygAxes.plot(self.__time,self.__x)
-        plt.setp(sygAxes, xlim = (t_min_m, t_max_m), xlabel = 'Time [s]')
-        tfAxes.imshow(self.__power[f_min_i:f_max_i, t_min_i:t_max_i],aspect='auto',origin='lower',interpolation='nearest',   
-                  extent=(t_min_m-dt/2,t_max_m+dt/2,f_min_m-df/2,f_max_m+df/2))  
-        plt.setp(tfAxes,xticklabels=[], ylabel = 'Frequency [Hz]')
-        plt.title(self.__title)
-        plt.show()
+        
+        
+        n = len(self.__channels)
+        
+        if n == 1:
+            k = 1
+            m = 1
+        elif n == 2:
+            k = 1
+            m = 2
+        else:
+            k = n//2
+            m = k
+       
+        
+        fig = plt.figure(figsize=(10, 8))
+        outer = gridspec.GridSpec(k, m, wspace=0.15*k, hspace=0.15*k)
+
+        for i in range(n):
+            inner = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer[i],
+                                            hspace=0, height_ratios=[8,1])
             
+           
+            x, power, name = self.__spectrogram(self.__channels[i])
+        
+            tfAxes = plt.Subplot(fig, inner[0,0])
+            tfAxes.imshow(power[f_min_i:f_max_i, t_min_i:t_max_i],aspect='auto',
+                          origin='lower',interpolation='nearest',   
+                          extent=(t_min_m-dt/2,t_max_m+dt/2,f_min_m-df/2,f_max_m+df/2))  
+            plt.setp(tfAxes,xticklabels=[], ylabel = 'Frequency [Hz]', 
+                     title = 'Channel ' + name)
+            
+            sygAxes = plt.Subplot(fig, inner[1,0])
+            sygAxes.plot(self.__time,x)
+            plt.setp(sygAxes, xlim = (t_min_m, t_max_m), xlabel = 'Time [s]')
+            
+            fig.add_subplot(tfAxes)
+            fig.add_subplot(sygAxes)
+       
+        plt.show()
         
