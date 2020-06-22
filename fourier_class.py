@@ -7,13 +7,70 @@ import matplotlib.pyplot as plt
 import re
 import matplotlib.gridspec as gridspec
 
-
+class WrongChannel(Exception):
+    pass
 
 class Fourier(object):
     def __init__(self, *, filename, Fs, channels, window, reference1, 
                  reference2 = None, overlap = 0, f_min = None, f_max = None, t_min = None, 
                  t_max = None): 
+        """
         
+
+        Parameters
+        ----------
+      
+        filename : str
+            edf filename with EEG data
+            
+        Fs : int
+            sampling rate in Hz
+            
+        channels : list of int or str
+            list of channels for which time-frequency map will be shown
+            
+        window : ndarray
+            a window with its length which is convolved with signal 
+            (for more info see https://numpy.org/doc/stable/reference/routines.window.html
+        
+        reference1 : int or str
+            channel which is treated as reference; reference channel is 
+            subtracted from all others channels: if one given -> -0.5*reference1;
+        
+        reference2 : int or str, optional
+            channel which is treated as reference; references channels are subtracted from all
+            others channels: if two given -> -0.5*(reference1+reference2). The default is None.
+        
+        overlap : int, optional
+            number of samples between beginnings of the window -> 
+            length of samples which will overlap is equal to the length of the window 
+            minus overlap; if overlap = 0 -> space between windows = len(window)
+            (no overlapping). The default is 0.
+        
+        f_min : it or float, optional
+            approximate values of minimum frequency
+            which will be shown on time-frequency map; from 0 to around Fs/2;
+            for more info see https://numpy.org/doc/stable/reference/generated/numpy.fft.rfftfreq.html
+            The default is 0.
+        
+        f_max : int or float, optional
+            approximate values of maximum frequency
+            which will be shown on time-frequency map; from 0 to around Fs/2;
+            for more info see https://numpy.org/doc/stable/reference/generated/numpy.fft.rfftfreq.html 
+            The default is around Fs/2.
+        
+        t_min : int or float, optional
+            approximate value of minimum time which will be shown on 
+            time-frequency map; from 0 to signal length is sec = signal_lenght/Fs;
+            The default is 0.
+        
+        t_max : int or float, optional
+            approximate value of maximum time which will be shown on 
+            time-frequency map; from 0 to signal length is sec = signal_lenght/Fs; 
+            The default is signal_leght/Fs.
+
+       """
+       
         self.__filename = filename
         self.__Fs = Fs
         self.__reference1 = reference1
@@ -29,6 +86,28 @@ class Fourier(object):
         
         
         self.__read_from_edf()
+        
+        chan_lab =  all(item in self.__signal_labels for item in self.__channels)
+        chan_num = all(item in self.__signal_numbers for item in self.__channels)
+        
+    
+        if (chan_lab == False) & (chan_num == False):
+            
+            raise WrongChannel("Wrong Channel list -> list must contain only "
+                               "numbers or only labels -> labels of channels: ",
+                               self.__signal_labels," -> numbers of channels: ",
+                               self.__signal_numbers)
+        
+        if (self.__reference1 not in self.__signal_labels) & (self.__reference1 not in self.__signal_numbers):
+        
+            raise WrongChannel("Wrong Reference1 -> labels of channels: ", self.__signal_labels,
+                               " -> numbers of channels: ", self.__signal_numbers)
+        
+        
+        if (self.__reference2 != None) & (self.__reference2 not in self.__signal_labels) & (self.__reference2 not in self.__signal_numbers):
+        
+            raise WrongChannel("Wrong Reference2 -> None -> labels of channels: ", self.__signal_labels,
+                               " -> numbers of channels: ", self.__signal_numbers)
         
         self.__montage()
         
@@ -54,56 +133,161 @@ class Fourier(object):
     
     @property
     def filename(self):
+        """
+
+        Returns
+        -------
+        string
+            path to the file
+
+        """
         return self.__filename
     
     @property
     def Fs(self):
+        """
+        
+
+        Returns
+        -------
+        int
+            sampling rate
+
+        """
         return self.__Fs
 
     @property
     def reference1(self):
+        """
+        
+
+        Returns
+        -------
+        int or str
+            label or number of channel
+
+        """
         return self.__reference1
 
     @property
     def reference2(self):
+        """
+        
+
+        Returns
+        -------
+        int or str
+            label or number of channel
+
+        """
         return self.__reference2
 
     @property
     def channels(self):
+        """
+        
+
+        Returns
+        -------
+        list of int or str
+            list of labels or numbers of choosen channel
+
+        """
         return self.__channels
 
     @property
     def window(self):
+        """
+        
+
+        Returns
+        -------
+        ndarray
+            a window with its length which is convolved with signal
+
+        """
         return self.__window
 
     @property
     def overlap(self):
+        """
+        
+
+        Returns
+        -------
+        int
+            number of samples between beginnings of the window; if 0 -> no overlappig
+
+        """
         return self.__overlap
 
     @property
     def f_min(self):
+        """
+        
+
+        Returns
+        -------
+        int or float
+            approximate value of minimum frequency
+            which will be shown on time-frequency map
+
+        """
         return self.__f_min
 
     @property
     def f_max(self):
+        """
+        
+
+        Returns
+        -------
+        int or float
+            approximate value of maximum frequency
+            which will be shown on time-frequency map
+
+        """
         return self.__f_max
 
     @property
     def t_min(self):
+        """
+        
+
+        Returns
+        -------
+        int or float
+            approximate value of minimum time which will be shown on 
+            time-frequency map
+
+        """
         return self.__t_min
 
     @property
     def t_max(self):
+        """
+        
+
+        Returns
+        -------
+        int or float
+            approximate value of maximum time which will be shown on 
+            time-frequency map
+
+        """
         return self.__t_max
 
     
 
     def __read_from_edf(self): 
+        
+        
   
         print('Reading the data from edf file.')
         f = pyedflib.EdfReader(self.__filename)
         Fs = self.__Fs
         n = f.signals_in_file
+        self.__signal_numbers = np.arange(n).tolist()
         signal_label = f.getSignalLabels()
         self.__signal = np.zeros((n, f.getNSamples()[0]))
         self.__signal_labels = []
@@ -117,16 +301,47 @@ class Fourier(object):
     
     @property
     def time(self):
+        """
+        
+
+        Returns
+        -------
+        array
+            time samples
+
+        """
         return self.__time
     
     @property
     def signal_labels(self):
+        """
+        
+
+        Returns
+        -------
+        list of str
+            channels labels
+
+        """
         return self.__signal_labels
+    
+    @property
+    def signal_numbers(self):
+        """
+        
+
+        Returns
+        -------
+        list of int
+            channels numbers
+
+        """
+        return self.__signal_numbers
 
 
     def __montage(self):
         
-        b, a = ss.butter(2, 0.03, btype = 'highpass')
+        b, a = ss.butter(2, 0.03, btype = 'highpass')  #removes low frequencies
    
         if self.__reference2 == None:
                 
@@ -136,31 +351,46 @@ class Fourier(object):
                 a1 = self.__signal_labels.index(self.__reference1)
                     
             s1 = self.__signal[a1]
+            
+            self.__signal -= s1
 
             for i in range(np.shape(self.__signal)[0]):
-                self.__signal[i] -= s1
                 self.__signal[i] = ss.filtfilt(b, a, self.__signal[i])
   
         else:
                 
-            if isinstance(self.__reference1, int) & isinstance(self.__reference2, int):
+            if isinstance(self.__reference1, int):
                 a1 = self.__reference1
+                
+            if isinstance(self.__reference2, int):
                 a2 = self.__reference2
                 
-            if isinstance(self.__reference1, str) & isinstance(self.__reference2, str):
+            if isinstance(self.__reference1, str):
                 a1 = self.__signal_labels.index(self.__reference1)
+            
+            if isinstance(self.__reference2, str):
                 a2 = self.__signal_labels.index(self.__reference2)
                     
             s1 = self.__signal[a1]
             s2 = self.__signal[a2]
+            
+            self.__signal -= 0.5*(s1+s2)
 
             for i in range(np.shape(self.signal)[0]):
-                self.__signal[i] -= 0.5*(s1+s2)
                 self.__signal[i] = ss.filtfilt(b, a, self.__signal[i])
    
         
     @property
     def signal(self):
+        """
+        
+
+        Returns
+        -------
+        ndarray
+            matrix with signal after montage and filtration
+
+        """
         return self.__signal
     
    
@@ -265,7 +495,7 @@ class Fourier(object):
             
             sygAxes = plt.Subplot(fig, inner[1,0])
             sygAxes.plot(self.__time,x)
-            plt.setp(sygAxes, xlim = (t_min_m, t_max_m), xlabel = 'Time [s]')
+            plt.setp(sygAxes, xlim = (t_min_m-dt/2, t_max_m+dt/2), xlabel = 'Time [s]')
             
             fig.add_subplot(tfAxes)
             fig.add_subplot(sygAxes)

@@ -14,14 +14,14 @@
 <li>scipy.signal</li>
 <li>matplotlib.pyplot</li>
 <li>re</li>
-<li>matplotlib.gridspee</li>
+<li>matplotlib.gridspec</li>
 </ul>
 </p>
 
 <p>
 <b>parameters:</b>
 <ul>
-  <li><b>os.chdir</b> - path to the data folder </li>
+<li><b>os.chdir</b> - path to the data folder </li>
 <li><b>filename</b> - edf filename with EEG data</li>
 <li><b>Fs</b> - sampling in Hz (int)</li>
 <li><b>window</b> - a window with its length which is convolved with signal (for more info see <a href = "https://numpy.org/doc/stable/reference/routines.window.html">https://numpy.org/doc/stable/reference/routines.window.html</a>)</li>
