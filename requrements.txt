@@ -1,5 +1,4 @@
-pyedflib
+pyEDFlib==0.1.17 
+numpy==1.18.1 
+scipy==1.4.1
 
-numpy
-
-scipy
