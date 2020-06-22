@@ -30,19 +30,19 @@ class Fourier(object):
            a list of channels for which time-frequency map will be shown
             
         window : ndarray
-            a window with its length which is convolved with signal 
+            a window with its length which is convolved with the signal 
             (for more info see https://numpy.org/doc/stable/reference/routines.window.html
         
         reference1 : int or str
             a channel which is treated as reference; reference channel is 
-            subtracted from all others channels: if one given -> -0.5*reference1;
+            subtracted from all others channels: if one given -> -reference1;
         
         reference2 : int or str, optional
             a channel which is treated as reference; references channels are subtracted from all
             other channels: if two given -> -0.5*(reference1+reference2). The default is None.
         
         overlap : int, optional
-            number of samples between beginnings of the window -> 
+            number of samples between the beginnings of the window -> 
             length of the overlapping vector is equal to the length of the window 
             minus overlap; if overlap = 0 -> space between windows = len(window)
             (no overlapping). The default is 0.
@@ -203,7 +203,7 @@ class Fourier(object):
         Returns
         -------
         ndarray
-            a window with its length which is convolved with signal
+            a window with its length which is convolved with the signal
 
         """
         return self.__window
