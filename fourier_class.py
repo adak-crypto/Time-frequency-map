@@ -27,47 +27,47 @@ class Fourier(object):
             sampling rate in Hz
             
         channels : list of int or str
-            list of channels for which time-frequency map will be shown
+           a list of channels for which time-frequency map will be shown
             
         window : ndarray
             a window with its length which is convolved with signal 
             (for more info see https://numpy.org/doc/stable/reference/routines.window.html
         
         reference1 : int or str
-            channel which is treated as reference; reference channel is 
+            a channel which is treated as reference; reference channel is 
             subtracted from all others channels: if one given -> -0.5*reference1;
         
         reference2 : int or str, optional
-            channel which is treated as reference; references channels are subtracted from all
-            others channels: if two given -> -0.5*(reference1+reference2). The default is None.
+            a channel which is treated as reference; references channels are subtracted from all
+            other channels: if two given -> -0.5*(reference1+reference2). The default is None.
         
         overlap : int, optional
             number of samples between beginnings of the window -> 
-            length of samples which will overlap is equal to the length of the window 
+            length of the overlapping vector is equal to the length of the window 
             minus overlap; if overlap = 0 -> space between windows = len(window)
             (no overlapping). The default is 0.
         
         f_min : it or float, optional
-            approximate values of minimum frequency
-            which will be shown on time-frequency map; from 0 to around Fs/2;
+            approximate minimum value of the frequency
+            presented the time-frequency map; from 0 to around Fs/2;
             for more info see https://numpy.org/doc/stable/reference/generated/numpy.fft.rfftfreq.html
             The default is 0.
         
         f_max : int or float, optional
-            approximate values of maximum frequency
-            which will be shown on time-frequency map; from 0 to around Fs/2;
+            approximate maximum value of the frequency presented on the
+            on a time-frequency map; from 0 to around Fs/2;
             for more info see https://numpy.org/doc/stable/reference/generated/numpy.fft.rfftfreq.html 
             The default is around Fs/2.
         
         t_min : int or float, optional
-            approximate value of minimum time which will be shown on 
-            time-frequency map; from 0 to signal length is sec = signal_lenght/Fs;
+            approximate minimum value of the time presented on the
+            time-frequency map; from 0 to a signal length is sec = signal_lenght/Fs;
             The default is 0.
         
         t_max : int or float, optional
-            approximate value of maximum time which will be shown on 
+            approximate maximum value of the time preseted on the
             time-frequency map; from 0 to signal length is sec = signal_lenght/Fs; 
-            The default is signal_leght/Fs.
+            The default is signal_lenght/Fs.
 
        """
        
@@ -216,7 +216,7 @@ class Fourier(object):
         Returns
         -------
         int
-            number of samples between beginnings of the window; if 0 -> no overlappig
+            number of samples between the beginnings of the window; if 0 -> no overlappig
 
         """
         return self.__overlap
@@ -229,8 +229,8 @@ class Fourier(object):
         Returns
         -------
         int or float
-            approximate value of minimum frequency
-            which will be shown on time-frequency map
+            approximate minimum value of the frequency
+            presented the time-frequency map
 
         """
         return self.__f_min
@@ -243,8 +243,8 @@ class Fourier(object):
         Returns
         -------
         int or float
-            approximate value of maximum frequency
-            which will be shown on time-frequency map
+            approximate maximum value of the frequency
+            presented the time-frequency map
 
         """
         return self.__f_max
@@ -257,8 +257,8 @@ class Fourier(object):
         Returns
         -------
         int or float
-            approximate value of minimum time which will be shown on 
-            time-frequency map
+            approximate minimum value of the time
+            presented the time-frequency map
 
         """
         return self.__t_min
@@ -271,8 +271,8 @@ class Fourier(object):
         Returns
         -------
         int or float
-            approximate value of maximum time which will be shown on 
-            time-frequency map
+            approximate maximum value of the time
+            presented the time-frequency map
 
         """
         return self.__t_max
@@ -307,7 +307,7 @@ class Fourier(object):
         Returns
         -------
         array
-            time samples
+            vector of time samples
 
         """
         return self.__time
@@ -320,7 +320,7 @@ class Fourier(object):
         Returns
         -------
         list of str
-            channels labels
+            list of channels labels
 
         """
         return self.__signal_labels
@@ -333,7 +333,7 @@ class Fourier(object):
         Returns
         -------
         list of int
-            channels numbers
+            list of channels numbers
 
         """
         return self.__signal_numbers
@@ -451,12 +451,12 @@ class Fourier(object):
         df = self.__freq_map[1]-self.__freq_map[0]
         dt = self.__time_map[1]-self.__time_map[0]
 
-        f_min_m = min(self.__freq_map, key=lambda x:abs(x-self.__f_min))
+        f_min_m = min(self.__freq_map, key=lambda x:abs(x-self.__f_min))   #real f_min value
         f_max_m = min(self.__freq_map, key=lambda x:abs(x-self.__f_max))
         t_min_m = min(self.__time_map, key=lambda x:abs(x-self.__t_min))
         t_max_m = min(self.__time_map, key=lambda x:abs(x-self.__t_max))
 
-        f_min_i = np.where(self.__freq_map == f_min_m)[0][0]
+        f_min_i = np.where(self.__freq_map == f_min_m)[0][0]  #index of f_min value
         f_max_i = np.where(self.__freq_map == f_max_m)[0][0]
         t_min_i = np.where(self.__time_map == t_min_m)[0][0]
         t_max_i = np.where(self.__time_map == t_max_m)[0][0]
