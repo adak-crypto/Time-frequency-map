@@ -6,6 +6,7 @@ import scipy.signal as ss
 import matplotlib.pyplot as plt
 import re
 import matplotlib.gridspec as gridspec
+import math
 
 class WrongChannel(Exception):
     pass
@@ -15,8 +16,6 @@ class Fourier(object):
                  reference2 = None, overlap = 0, f_min = None, f_max = None, t_min = None, 
                  t_max = None): 
         """
-        
-
         Parameters
         ----------
       
@@ -82,9 +81,7 @@ class Fourier(object):
         self.__f_max = f_max
         self.__t_min = t_min
         self.__t_max = t_max
-        
-        
-        
+
         self.__read_from_edf()
         
         chan_lab =  all(item in self.__signal_labels for item in self.__channels)
@@ -127,162 +124,123 @@ class Fourier(object):
         
             
         self.__TFRPlot()
-     
-      
 
-    
     @property
     def filename(self):
         """
-
         Returns
         -------
         string
             path to the file
-
         """
         return self.__filename
     
     @property
     def Fs(self):
         """
-        
-
         Returns
         -------
         int
             sampling rate
-
         """
         return self.__Fs
 
     @property
     def reference1(self):
         """
-        
-
         Returns
         -------
         int or str
             label or number of channel
-
         """
         return self.__reference1
 
     @property
     def reference2(self):
         """
-        
-
         Returns
         -------
         int or str
             label or number of channel
-
         """
         return self.__reference2
 
     @property
     def channels(self):
         """
-        
-
         Returns
         -------
         list of int or str
             list of labels or numbers of choosen channel
-
         """
         return self.__channels
 
     @property
     def window(self):
         """
-        
-
         Returns
         -------
         ndarray
             a window with its length which is convolved with the signal
-
         """
         return self.__window
 
     @property
     def overlap(self):
         """
-        
-
         Returns
         -------
         int
             number of samples between the beginnings of the window; if 0 -> no overlappig
-
         """
         return self.__overlap
 
     @property
     def f_min(self):
         """
-        
-
         Returns
         -------
         int or float
             approximate minimum value of the frequency
             presented the time-frequency map
-
         """
         return self.__f_min
 
     @property
     def f_max(self):
         """
-        
-
         Returns
         -------
         int or float
             approximate maximum value of the frequency
             presented the time-frequency map
-
         """
         return self.__f_max
 
     @property
     def t_min(self):
         """
-        
-
         Returns
         -------
         int or float
             approximate minimum value of the time
             presented the time-frequency map
-
         """
         return self.__t_min
 
     @property
     def t_max(self):
         """
-        
-
         Returns
         -------
         int or float
             approximate maximum value of the time
             presented the time-frequency map
-
         """
         return self.__t_max
 
-    
-
     def __read_from_edf(self): 
-        
-        
-  
+
         print('Reading the data from edf file.')
         f = pyedflib.EdfReader(self.__filename)
         Fs = self.__Fs
@@ -297,44 +255,34 @@ class Fourier(object):
         self.__time = np.arange(0, np.shape(self.__signal)[1]/Fs, 1/Fs)
         f.close()
 
-    
-    
+
     @property
     def time(self):
         """
-        
-
         Returns
         -------
         array
             vector of time samples
-
         """
         return self.__time
     
     @property
     def signal_labels(self):
         """
-        
-
         Returns
         -------
         list of str
             list of channels labels
-
         """
         return self.__signal_labels
     
     @property
     def signal_numbers(self):
         """
-        
-
         Returns
         -------
         list of int
             list of channels numbers
-
         """
         return self.__signal_numbers
 
@@ -383,13 +331,10 @@ class Fourier(object):
     @property
     def signal(self):
         """
-        
-
         Returns
         -------
         ndarray
             matrix with signal after montage and filtration
-
         """
         return self.__signal
     
@@ -409,14 +354,10 @@ class Fourier(object):
         self.__time_map = self.__window_pos/self.__Fs
           
         self.__freq_map = np.fft.rfftfreq(self.__No, 1/self.__Fs)
-        self.__z = np.zeros(int(self.__No/2))       #half of window to add to the begining and to the end 
-        
-        
-        
+        self.__z = np.zeros(int(self.__No/2))       #half of window to add to the begining and to the end
 
     def __spectrogram(self, channel):
-        
-        
+
         if isinstance(channel, int):
             self.__x = self.__signal[channel]
             self.__channel_name = self.__signal_labels[channel]
@@ -445,9 +386,7 @@ class Fourier(object):
 
     
     def __TFRPlot(self):
-        
-    
-      
+
         df = self.__freq_map[1]-self.__freq_map[0]
         dt = self.__time_map[1]-self.__time_map[0]
 
@@ -460,26 +399,20 @@ class Fourier(object):
         f_max_i = np.where(self.__freq_map == f_max_m)[0][0]
         t_min_i = np.where(self.__time_map == t_min_m)[0][0]
         t_max_i = np.where(self.__time_map == t_max_m)[0][0]
-        
-        
-        
-        n = len(self.__channels)
-        
-        if n == 1:
-            k = 1
-            m = 1
-        elif n == 2:
-            k = 1
-            m = 2
-        else:
-            k = n//2
-            m = k
-       
-        
-        fig = plt.figure(figsize=(10, 8))
-        outer = gridspec.GridSpec(k, m, wspace=0.15*k, hspace=0.15*k)
 
-        for i in range(n):
+        number_of_plots = len(self.__channels)
+
+        number_of_rows = round(math.sqrt(number_of_plots))
+        number_of_columns = number_of_plots // number_of_rows
+
+        if number_of_rows * number_of_columns < number_of_plots:
+            number_of_columns += 1
+
+        fig = plt.figure(figsize=(10, 8))
+        outer = gridspec.GridSpec(number_of_rows, number_of_columns, wspace=0.15* number_of_rows,
+                                  hspace=0.15* number_of_rows)
+
+        for i in range(number_of_plots):
             inner = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer[i],
                                             hspace=0, height_ratios=[8,1])
             
